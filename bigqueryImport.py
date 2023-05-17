@@ -21,10 +21,9 @@ fs = gcsfs.GCSFileSystem(project=projectName,token=gcsAPI)
 # /* 取得 GCS 中的特定檔案 */
 fileList = fs.ls(projectDataset+"/"+datasetPath)
 _newfileList = ["gs://" + x for x in fileList]
-print(_newfileList)
+#print(_newfileList)
 
 # /* dask */
-# /* 第一個為 gs://91app_dataset/Behaviordata/，所以跳過從 1 開始 */
 #/* datatype 轉換錯誤，靜態設置  */
 dtypes={'DeviceId': 'object',
        'EventTime': 'float64',
@@ -34,10 +33,14 @@ dtypes={'DeviceId': 'object',
        'RegisterTunnel': 'object',
        'SearchTerm': 'object',
        'TradesGroupCode': 'object'}
-ddf = dd.read_csv(_newfileList[1], dtype=dtypes,storage_options={"token": gcsAPI})
+# /* 第一個為 gs://91app_dataset/Behaviordata/，所以跳過從 1 開始 */
+ddf = dd.read_csv(_newfileList[1:], dtype=dtypes,storage_options={"token": gcsAPI})
 
-# /* dask to  pandas */
+# /* dask to pandas */
 df_pd = ddf.compute()
+
+# /* import to bigquery */
 credentials = Credentials.from_service_account_file(gbqAPI)
+projectID = "lustrous-setup-386509"
 tableName = "BehaviorData"
-to_gbq(df_pd, tableName+".BehaviorData", project_id="lustrous-setup-386509", credentials=credentials, if_exists='replace')
+to_gbq(df_pd, tableName+".BehaviorData", project_id=projectID, credentials=credentials, if_exists='replace')
