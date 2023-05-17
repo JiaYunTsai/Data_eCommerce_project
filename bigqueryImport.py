@@ -31,10 +31,16 @@ dtypes={'DeviceId': 'object',
        'Version': 'object',
        'CategoryId': 'object',
        'RegisterTunnel': 'object',
-       'SearchTerm': 'object',
-       'TradesGroupCode': 'object'}
+      'SearchTerm': 'object',
+       'TradesGroupCode': 'object',
+       'ContentId': 'object',
+       'ContentName': 'object',
+       'ContentType': 'object',
+       'PageType': 'object' }
+
 # /* 第一個為 gs://91app_dataset/Behaviordata/，所以跳過從 1 開始 */
-ddf = dd.read_csv(_newfileList[1:], dtype=dtypes,storage_options={"token": gcsAPI})
+# /* low_memory 為關閉 pandas 對 dtype 的推測(很佔記憶體空間) */
+ddf = dd.read_csv(_newfileList[1:], dtype=dtypes, storage_options={"token": gcsAPI}, low_memory=False)
 
 # /* dask to pandas */
 df_pd = ddf.compute()
