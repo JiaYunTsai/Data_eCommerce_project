@@ -48,5 +48,6 @@ df_pd = ddf.compute()
 # /* import to bigquery */
 credentials = Credentials.from_service_account_file(gbqAPI)
 projectID = "lustrous-setup-386509"
+dataBaseName = "BehaviorData"
 tableName = "BehaviorData"
-to_gbq(df_pd, tableName+".BehaviorData", project_id=projectID, credentials=credentials, if_exists='replace')
+to_gbq(df_pd, dataBaseName+"."+tableName, project_id=projectID, credentials=credentials, if_exists='replace')
