@@ -15,7 +15,7 @@ class EachMemberItem:
         for i in item:
             member_item_dict[i] = self.member.loc[self.member['SalePageId'] == i,'score'].sum()
         self.member_item_dict = member_item_dict
-        # return member_item_dict
+        
 
 class UserItem:
     def __init__(self,data):
@@ -47,13 +47,12 @@ class UserItem:
                 else:
                     last_matrix.loc[i,j] = memberitem_matrix[i].get(j)
         
-        last_matrix.to_excel('last_martix.xlsx')
+        last_matrix.to_excel('./data/last_martix.xlsx')
         self.nummatrix= last_matrix.values
         
 
 if __name__ == '__main__':
-    usermatrix = UserItem('testid_2.xlsx')
+    usermatrix = UserItem('./data/testid_31.xlsx')
     usermatrix.user_item_dict()
-    # print(usermatrix.memberitem_matrix) 
     usermatrix.martix()
     print(usermatrix.nummatrix)
