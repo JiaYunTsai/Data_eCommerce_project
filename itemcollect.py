@@ -43,6 +43,13 @@ class EachMemberItem:
 class UserItem:
     def __init__(self, data):
         self.behaviordata = pd.read_excel(data)
+        # self.RawuserID = self.behaviordata["ShopMemberId"].to_list()
+        self.RawuserID = [
+            x
+            for i, x in enumerate(self.behaviordata["ShopMemberId"].to_list())
+            if x not in self.behaviordata["ShopMemberId"].to_list()[:i]
+        ]
+
         # 因應推薦系統排序時需要使用數字
         self.behaviordata["ShopMemberId"] = pd.factorize(
             self.behaviordata["ShopMemberId"]
@@ -99,11 +106,11 @@ class UserItem:
 class Recommend_system:
     def __init__(self):
         self.user_similarity = None
-        self.item_sim_matrix = None
+        # self.item_sim_matrix = None
 
     def martix_to_similarity(self, nummatrix):
         self.user_similarity = cosine_similarity(nummatrix)
-        self.item_sim_matrix = np.dot(nummatrix.T, nummatrix)
+        # self.item_sim_matrix = np.dot(nummatrix.T, nummatrix)
 
     def recommend_similarity(
         self, user_id, user_similarity, user_item_matrix, k
@@ -118,6 +125,10 @@ class Recommend_system:
             similar_users.tolist(),
             unrated_products[recommended_ratings[:k]].tolist(),
         )
+
+    def finduserId(self, targerId):
+        targerId_Code = self.user_similarity[targerId]
+        return targerId_Code.tolist()
 
 
 class ProductName:
@@ -138,45 +149,6 @@ class ProductName:
         return self.salepage_dict.get(salepage_id, "Title not found")
 
 
-class TrainTestModel:
-    def __init__(self, user_features, train_data, test_data):
-        self.user_features = user_features
-        self.train_data = train_data
-        self.test_data = test_data
-
-    def train(self, target_user):
-        # 找到具有相同特徵的人（Group AA）
-        group_aa = self.user_features.loc[self.user_features == target_user]
-
-        # 從Group AA中獲取喜歡的產品A, B, C
-        liked_products = self.train_data.loc[
-            group_aa, ["Product_A", "Product_B", "Product_C"]
-        ]
-
-        # 推薦給目標用戶
-        recommended_products = liked_products.mean(axis=0)
-        return recommended_products
-
-    def test(self, target_user):
-        # 找到具有相同特徵的人（Group AA）
-        group_aa = self.user_features.loc[self.user_features == target_user]
-
-        # 從Group AA中獲取這季度喜歡的產品E, F, G
-        current_likes = self.test_data.loc[
-            group_aa, ["Product_E", "Product_F", "Product_G"]
-        ]
-
-        # 找到具有相同特徵的人（Group BB）
-        group_bb = self.user_features.loc[self.user_features == target_user]
-
-        # 從Group BB中獲取這季度喜歡的產品H, J
-        new_likes = self.test_data.loc[group_bb, ["Product_H", "Product_J"]]
-
-        # 比較新喜歡的產品H, J與目前喜歡的產品E, F, G
-        comparison = new_likes.compare(current_likes)
-        return comparison
-
-
 if __name__ == "__main__":
     usermatrix = UserItem("testid_31.xlsx")
     usermatrix.user_item_dict()
@@ -194,6 +166,32 @@ if __name__ == "__main__":
     ):
         salepage_title = product_name.get_salepage_title(salepage_id)
         print(f"推薦第{i}名為：{salepage_title} ")
+
+    print(recommendations[0])
+    find_ID = usermatrix.RawuserID  # 全用戶id 照引入後之順序
+    result = [find_ID[i] for i in recommendations[0]]
+    print(result)
+    """
+    Second Time
+    """
+    # usermatrix = UserItem("testid_2.xlsx")
+    # usermatrix.user_item_dict()
+    # usermatrix.martix()
+    # rs.martix_to_similarity(usermatrix.nummatrix)
+    # recommendations = rs.recommend_similarity(
+    #     usermatrix.last_matrix.index[0], rs.user_similarity, usermatrix.last_matrix, 5
+    # )
+
+    # for salepage_id, i in zip(
+    #     recommendations[1], range(1, len(recommendations[1]) + 1)
+    # ):
+    #     salepage_title = product_name.get_salepage_title(salepage_id)
+    #     print(f"推薦第{i}名為：{salepage_title} ")
+
+    """
+    Comparing
+    """
+
     # print(rs.user_similarity)
-    # print(recommendations[0])
-    print(usermatrix.last_matrix.loc[[30, 29]])
+
+    # print(usermatrix.last_matrix.loc[[30, 29]])
