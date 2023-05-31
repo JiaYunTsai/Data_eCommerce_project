@@ -1,3 +1,11 @@
+data_merge.py
+testid_2.xlsx
+testid_2_num.xlsx
+testid_31.xlsx
+test.py
+*.csv
+*.xlsx
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
