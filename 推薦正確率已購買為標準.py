@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import statistics
 
 
 pd.options.mode.chained_assignment = None
@@ -183,11 +184,11 @@ class ExecuteSystem:
             recommendations[1], range(1, len(recommendations[1]) + 1)
         ):
             salepage_title = self.product_name.get_salepage_title(salepage_id)
-            print(f"推薦第{i}名為：{salepage_title} ")
+            # print(f"推薦第{i}名為：{salepage_title} ")
 
         all_user_Id = self.user_matrix.RawuserID
         user_of_recommendation = [all_user_Id[i] for i in recommendations[0]]
-        print(f"Group ID:{user_of_recommendation}")
+        # print(f"Group ID:{user_of_recommendation}")
 
         return user_of_recommendation, recommendations[1]
 
@@ -219,7 +220,8 @@ class ExecuteSystem:
         target = df.iloc[targer_index]
         target = target[target == 1].index.tolist()
         result = [i for i, item in enumerate(recommend_list) if item in target]
-        if (len(result) > 0) & (result[0] != 0):
+        if len(result) > 0:
+            # if result[0] != 0:
             accuracy = len(result) / len(recommend_list) * 100
             return accuracy
         else:
@@ -234,24 +236,42 @@ class ExecuteSystem:
 if __name__ == "__main__":
     """
     k為決定推薦幾名
+    userId應該沒問題，有問題就抓資料集內隨便一人
+    data1 放誰都可以，這個是以購買有無當答案的
     """
-    k = 30
-    userId = "n4b4ediePANQRQf71SRguuqHvUB1aO/fik9Jv94M91c="
+
+    k = 12
+    userId = ""
+
+    execute_system = ExecuteSystem("data1.xlsx", "SalePageData.csv", k)
+
+    user_list = []
+    accuracy = []
+    for i in execute_system.RawuserId:
+        user_list.append(i)
+    for j in user_list:
+        userId_index = execute_system.find_user_index(j)
+        salepageid_of_BB = execute_system.process_recommendation(userId_index)
+        check_bought_record = execute_system.check_bought(j, salepageid_of_BB[1])
+        print(f"準確率：{check_bought_record}%")
+        accuracy.append(check_bought_record)
+    print(accuracy)
+    print((f"全用戶平均:{statistics.mean(accuracy):.3f}%"))
+
+    # print(final_ave)
     # 第一次
-    print("Group AA")
-    execute_system = ExecuteSystem("testid_31.xlsx", "SalePageData.csv", k)
-    userId_index = execute_system.find_user_index(userId)
-    first_of_user = execute_system.process_recommendation(userId_index)
+    # print("Group AA")
+    # execute_system = ExecuteSystem("testid_31.xlsx", "SalePageData.csv", k)
+    # userId_index = execute_system.find_user_index(userId)
+    # first_of_user = execute_system.process_recommendation(userId_index)
     # 第二次
-    print("Group BB")
-    execute_system = ExecuteSystem("testid_31.xlsx", "SalePageData.csv", k)
-    userId_index = execute_system.find_user_index(userId)
-    salepageid_of_BB = execute_system.process_recommendation(userId_index)
+    # print("Group BB")
+    # execute_system = ExecuteSystem("testid_31.xlsx", "SalePageData.csv", k)
+    # userId_index = execute_system.find_user_index(userId)
+    # salepageid_of_BB = execute_system.process_recommendation(userId_index)
 
-    check_bought_record = execute_system.check_bought(userId, salepageid_of_BB[1])
+    # check_bought_record = execute_system.check_bought(userId, salepageid_of_BB[1])
     # 比較
-    salepageid_of_AA = execute_system.process_recomm_comparing(
-        userId_index, first_of_user[0]
-    )
-
-    print(f"準確率：{check_bought_record}")
+    # salepageid_of_AA = execute_system.process_recomm_comparing(
+    #     userId_index, first_of_user[0]
+    # )

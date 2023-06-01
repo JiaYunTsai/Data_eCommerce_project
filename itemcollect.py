@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-
+import statistics
 
 pd.options.mode.chained_assignment = None
 
@@ -178,16 +178,16 @@ class ExecuteSystem:
             self.user_matrix.last_matrix,
             self.k,
         )
-        print("推薦結果")
+        # print("推薦結果A")
         for salepage_id, i in zip(
             recommendations[1], range(1, len(recommendations[1]) + 1)
         ):
             salepage_title = self.product_name.get_salepage_title(salepage_id)
-            print(f"推薦第{i}名為：{salepage_title} ")
+            # print(f"推薦第{i}名為：{salepage_title} ")
 
         all_user_Id = self.user_matrix.RawuserID
         user_of_recommendation = [all_user_Id[i] for i in recommendations[0]]
-        print(f"Group ID:{user_of_recommendation}")
+        # print(f"Group ID:{user_of_recommendation}")
 
         return user_of_recommendation, recommendations[1]
 
@@ -198,7 +198,7 @@ class ExecuteSystem:
             if value in first_of_user
         ]
 
-        print("Group AA in the Second Time")
+        # print("Group AA in the Second Time")
         recommendations_comparing = self.rs.recommend_compareing(
             userId,
             self.find_index,
@@ -210,7 +210,7 @@ class ExecuteSystem:
             recommendations_comparing, range(1, len(recommendations_comparing) + 1)
         ):
             salepage_title = self.product_name.get_salepage_title(salepage_id)
-            print(f"推薦第{i}名為：{salepage_title} ")
+            # print(f"推薦第{i}名為：{salepage_title} ")
         return recommendations_comparing
 
     def find_user_index(self, userId):
@@ -225,26 +225,38 @@ if __name__ == "__main__":
     data1.xlsx 改為 train
     data2.xlsx 改為 test
     """
-    k = 5
+    k = 12
     userId = ""
     # 第一次
-    print("Group AA")
-    execute_system = ExecuteSystem("data1.xlsx", "SalePageData.csv", k)
-    userId_index = execute_system.find_user_index(userId)
-    first_of_user = execute_system.process_recommendation(userId_index)
-    # 第二次
-    print("Group BB")
-    execute_system = ExecuteSystem("data2.xlsx", "SalePageData.csv", k)
-    userId_index = execute_system.find_user_index(userId)
-    salepageid_of_BB = execute_system.process_recommendation(userId_index)
+    # print("Group AA")
 
-    # 比較
-    salepageid_of_AA = execute_system.process_recomm_comparing(
-        userId_index, first_of_user[0]
-    )
-    print(salepageid_of_AA, "\n", salepageid_of_BB[1])
-    correct_predictions = sum(
-        1 for x, y in zip(salepageid_of_AA, salepageid_of_BB[1]) if x == y
-    )
-    accuracy = correct_predictions / len(salepageid_of_BB[1]) * 100
-    print(f"準確率：{accuracy:.2f}%")
+    execute_system = ExecuteSystem("data1.xlsx", "SalePageData.csv", k)
+    user_list1 = []
+    user_list2 = []
+    group_list = []
+    accuracy_list = []
+    for i in execute_system.RawuserId:
+        user_list1.append(i)
+    for j in user_list1:
+        userId_index = execute_system.find_user_index(j)
+        first_of_user = execute_system.process_recommendation(userId_index)
+        group_list.append(first_of_user[0])
+
+    execute_system = ExecuteSystem("data2.xlsx", "SalePageData.csv", k)
+    for k in execute_system.RawuserId:
+        user_list2.append(k)
+    print(user_list2)
+    print(group_list)
+    for l, m in zip(user_list2, range(0, len(user_list2))):
+        userId_index = execute_system.find_user_index(l)
+        salepageid_of_BB = execute_system.process_recommendation(userId_index)
+        salepageid_of_AA = execute_system.process_recomm_comparing(
+            userId_index, group_list[m]
+        )
+        correct_predictions = sum(
+            1 for x, y in zip(salepageid_of_AA, salepageid_of_BB[1]) if x == y
+        )
+        accuracy = correct_predictions / len(salepageid_of_BB[1]) * 100
+        print(f"準確率：{accuracy:.2f}%")
+        accuracy_list.append(accuracy)
+    print((f"全用戶平均:{statistics.mean(accuracy_list):.3f}%"))
