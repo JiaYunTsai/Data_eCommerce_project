@@ -11,7 +11,6 @@ class EachMemberItem:
         self.member = behavior_member
         self.score = {
             "viewproduct": 1,
-            "search": 2,
             "add": 3,
             "checkout": 4,
             "purchase": 5,
@@ -159,69 +158,81 @@ class ProductName:
         return self.salepage_dict.get(salepage_id, "Title not found")
 
 
+class ExecuteSystem:
+    def __init__(self, behavior_data, salepage_data, number_of_product):
+        self.user_matrix = UserItem(behavior_data)
+        self.user_matrix.user_item_dict()
+        self.user_matrix.martix()
+        self.product_name = ProductName(salepage_data)
+        self.rs = Recommend_system()
+        self.k = number_of_product
+        self.find_index = None
+
+    def process_recommendation(self):
+        self.rs.martix_to_similarity(self.user_matrix.nummatrix)
+        recommendations = self.rs.recommend_similarity(
+            self.user_matrix.last_matrix.index[0],
+            self.rs.user_similarity,
+            self.user_matrix.last_matrix,
+            self.k,
+        )
+        print("推薦結果")
+        for salepage_id, i in zip(
+            recommendations[1], range(1, len(recommendations[1]) + 1)
+        ):
+            salepage_title = self.product_name.get_salepage_title(salepage_id)
+            print(f"推薦第{i}名為：{salepage_title} ")
+
+        all_user_Id = self.user_matrix.RawuserID
+        user_of_recommendation = [all_user_Id[i] for i in recommendations[0]]
+        print(f"Group ID:{user_of_recommendation}")
+
+        return user_of_recommendation, recommendations[1]
+
+    def process_recomm_comparing(self, first_of_user):
+        self.find_index = [
+            index
+            for index, value in enumerate(self.user_matrix.RawuserID)
+            if value in first_of_user
+        ]
+        # print(self.find_index)
+        print("Group AA in the Second Time")
+        recommendations_comparing = self.rs.recommend_compareing(
+            self.user_matrix.last_matrix.index[0],
+            self.find_index,
+            self.user_matrix.last_matrix,
+            self.k,
+        )
+        recommendations_comparing = recommendations_comparing[0]
+        for salepage_id, i in zip(
+            recommendations_comparing, range(1, len(recommendations_comparing) + 1)
+        ):
+            salepage_title = self.product_name.get_salepage_title(salepage_id)
+            print(f"推薦第{i}名為：{salepage_title} ")
+        return recommendations_comparing
+
+
 if __name__ == "__main__":
-    usermatrix = UserItem("testid_2.xlsx")
-    usermatrix.user_item_dict()
-    usermatrix.martix()
-    product_name = ProductName("SalePageData.csv")
-    rs = Recommend_system()
-    rs.martix_to_similarity(usermatrix.nummatrix)
-    recommendations = rs.recommend_similarity(
-        usermatrix.last_matrix.index[0], rs.user_similarity, usermatrix.last_matrix, 5
+    """
+    k為決定推薦幾名
+    """
+    k = 5
+    # 第一次
+    print("Group AA")
+    execute_system = ExecuteSystem("testid_31.xlsx", "SalePageData.csv", k)
+    first_of_user = execute_system.process_recommendation()
+    # 第二次
+    print("Group BB")
+    execute_system = ExecuteSystem("testid_31.xlsx", "SalePageData.csv", k)
+    salepageid_of_BB = execute_system.process_recommendation()
+
+    # 比較
+    salepageid_of_AA = execute_system.process_recomm_comparing(first_of_user[0])
+    print(salepageid_of_AA, "\n", salepageid_of_BB[1])
+    correct_predictions = sum(
+        1 for x, y in zip(salepageid_of_AA, salepageid_of_BB[1]) if x == y
     )
-
-    print("First Result :")
-    for salepage_id, i in zip(
-        recommendations[1], range(1, len(recommendations[1]) + 1)
-    ):
-        salepage_title = product_name.get_salepage_title(salepage_id)
-        print(f"推薦第{i}名為：{salepage_title} ")
-
-    all_user_Id = usermatrix.RawuserID  # 全用戶id 照引入後之順序
-    first_sim_users = [all_user_Id[i] for i in recommendations[0]]
-
-    print(f"Group AA: {first_sim_users}")
-    """
-    Second Time
-    """
-    usermatrix = UserItem("testid_31.xlsx")
-    usermatrix.user_item_dict()
-    usermatrix.martix()
-    rs.martix_to_similarity(usermatrix.nummatrix)
-    recommendations = rs.recommend_similarity(
-        usermatrix.last_matrix.index[0], rs.user_similarity, usermatrix.last_matrix, 5
-    )
-    all_user_Id_second = usermatrix.RawuserID
-    # 找GroupAA 自第二份資料的index
-    find_index = [
-        index
-        for index, value in enumerate(all_user_Id_second)
-        if value in first_sim_users
-    ]
-
-    print(find_index)
-    print("Group BB 推薦的")
-    for salepage_id, i in zip(
-        recommendations[1], range(1, len(recommendations[1]) + 1)
-    ):
-        salepage_title = product_name.get_salepage_title(salepage_id)
-        print(f"推薦第{i}名為：{salepage_title} ")
-
-    """
-    Comparing
-    """
-    print("GroupAA 在第二份資料的產品\n")
-    first_user_resutlt2 = rs.recommend_compareing(
-        usermatrix.last_matrix.index[0],
-        # find_index
-        [0, 8],
-        usermatrix.last_matrix,
-        5,
-    )
-    first_user_resutlt2 = first_user_resutlt2[0]
-
-    for salepage_id, i in zip(
-        first_user_resutlt2, range(1, len(first_user_resutlt2) + 1)
-    ):
-        salepage_title = product_name.get_salepage_title(salepage_id)
-        print(f"推薦第{i}名為：{salepage_title} ")
+    accuracy = correct_predictions / len(salepageid_of_BB[1]) * 100
+    print(f"準確率：{accuracy:.2f}%")
+    fibd = UserItem("testid_31.xlsx")
+    print(fibd.RawuserID, "\n", execute_system.RawuserId)
