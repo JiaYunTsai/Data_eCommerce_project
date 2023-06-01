@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.decomposition import TruncatedSVD
+
 
 pd.options.mode.chained_assignment = None
 
@@ -43,13 +43,11 @@ class EachMemberItem:
 class UserItem:
     def __init__(self, data):
         self.behaviordata = pd.read_excel(data)
-        # self.RawuserID = self.behaviordata["ShopMemberId"].to_list()
         self.RawuserID = [
             x
             for i, x in enumerate(self.behaviordata["ShopMemberId"].to_list())
             if x not in self.behaviordata["ShopMemberId"].to_list()[:i]
         ]
-
         # 因應推薦系統排序時需要使用數字
         self.behaviordata["ShopMemberId"] = pd.factorize(
             self.behaviordata["ShopMemberId"]
@@ -106,16 +104,17 @@ class UserItem:
 class Recommend_system:
     def __init__(self):
         self.user_similarity = None
-        # self.item_sim_matrix = None
 
     def martix_to_similarity(self, nummatrix):
         self.user_similarity = cosine_similarity(nummatrix)
-        # self.item_sim_matrix = np.dot(nummatrix.T, nummatrix)
 
     def recommend_similarity(
         self, user_id, user_similarity, user_item_matrix, k
     ):  # 找k個最相似的
         unrated_products = user_item_matrix.loc[user_id, :].isna()  # 未瀏覽過
+        # unrated_products = user_item_matrix.loc[user_id, :].isna() | (
+        #     user_item_matrix.loc[user_id, :] < 10
+        # )
         unrated_products = unrated_products.index.values  # 商品ID
         similar_users = user_similarity[user_id].argsort()[-k:][::-1]
         similar_user_ratings = user_item_matrix.loc[similar_users, unrated_products]
@@ -126,9 +125,20 @@ class Recommend_system:
             unrated_products[recommended_ratings[:k]].tolist(),
         )
 
-    def finduserId(self, targerId):
-        targerId_Code = self.user_similarity[targerId]
-        return targerId_Code.tolist()
+    def recommend_compareing(
+        self, user_id, firstuser_of_recommendation, user_item_matrix, k
+    ):
+        unrated_products = user_item_matrix.loc[user_id, :].isna()  # 未瀏覽過
+        # unrated_products = user_item_matrix.loc[user_id, :].isna() | (
+        #     user_item_matrix.loc[user_id, :] < 10
+        # )
+        unrated_products = unrated_products.index.values  # 商品ID
+        similar_user_ratings = user_item_matrix.loc[
+            firstuser_of_recommendation, unrated_products
+        ]
+        recommended_ratings = similar_user_ratings.mean(axis=0)
+        recommended_ratings = np.array(recommended_ratings).argsort()[::-1]
+        return (unrated_products[recommended_ratings[:k]].tolist(),)
 
 
 class ProductName:
@@ -150,48 +160,68 @@ class ProductName:
 
 
 if __name__ == "__main__":
-    usermatrix = UserItem("testid_31.xlsx")
+    usermatrix = UserItem("testid_2.xlsx")
     usermatrix.user_item_dict()
     usermatrix.martix()
-
+    product_name = ProductName("SalePageData.csv")
     rs = Recommend_system()
     rs.martix_to_similarity(usermatrix.nummatrix)
     recommendations = rs.recommend_similarity(
         usermatrix.last_matrix.index[0], rs.user_similarity, usermatrix.last_matrix, 5
     )
 
-    product_name = ProductName("SalePageData.csv")
+    print("First Result :")
     for salepage_id, i in zip(
         recommendations[1], range(1, len(recommendations[1]) + 1)
     ):
         salepage_title = product_name.get_salepage_title(salepage_id)
         print(f"推薦第{i}名為：{salepage_title} ")
 
-    print(recommendations[0])
-    find_ID = usermatrix.RawuserID  # 全用戶id 照引入後之順序
-    result = [find_ID[i] for i in recommendations[0]]
-    print(result)
+    all_user_Id = usermatrix.RawuserID  # 全用戶id 照引入後之順序
+    first_sim_users = [all_user_Id[i] for i in recommendations[0]]
+
+    print(f"Group AA: {first_sim_users}")
     """
     Second Time
     """
-    # usermatrix = UserItem("testid_2.xlsx")
-    # usermatrix.user_item_dict()
-    # usermatrix.martix()
-    # rs.martix_to_similarity(usermatrix.nummatrix)
-    # recommendations = rs.recommend_similarity(
-    #     usermatrix.last_matrix.index[0], rs.user_similarity, usermatrix.last_matrix, 5
-    # )
+    usermatrix = UserItem("testid_31.xlsx")
+    usermatrix.user_item_dict()
+    usermatrix.martix()
+    rs.martix_to_similarity(usermatrix.nummatrix)
+    recommendations = rs.recommend_similarity(
+        usermatrix.last_matrix.index[0], rs.user_similarity, usermatrix.last_matrix, 5
+    )
+    all_user_Id_second = usermatrix.RawuserID
+    # 找GroupAA 自第二份資料的index
+    find_index = [
+        index
+        for index, value in enumerate(all_user_Id_second)
+        if value in first_sim_users
+    ]
 
-    # for salepage_id, i in zip(
-    #     recommendations[1], range(1, len(recommendations[1]) + 1)
-    # ):
-    #     salepage_title = product_name.get_salepage_title(salepage_id)
-    #     print(f"推薦第{i}名為：{salepage_title} ")
+    print(find_index)
+    print("Group BB 推薦的")
+    for salepage_id, i in zip(
+        recommendations[1], range(1, len(recommendations[1]) + 1)
+    ):
+        salepage_title = product_name.get_salepage_title(salepage_id)
+        print(f"推薦第{i}名為：{salepage_title} ")
 
     """
     Comparing
     """
+    print("GroupAA 在第二份資料的產品\n")
+    first_user_resutlt2 = rs.recommend_compareing(
+        usermatrix.last_matrix.index[0],
+        # find_index
+        [0, 8],
+        usermatrix.last_matrix,
+        5,
+    )
+    first_user_resutlt2 = first_user_resutlt2[0]
 
-    # print(rs.user_similarity)
-
-    # print(usermatrix.last_matrix.loc[[30, 29]])
+    for salepage_id, i in zip(
+        first_user_resutlt2, range(1, len(first_user_resutlt2) + 1)
+    ):
+        salepage_title = product_name.get_salepage_title(salepage_id)
+        print(f"推薦第{i}名為：{salepage_title} ")
