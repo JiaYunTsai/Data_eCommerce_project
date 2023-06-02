@@ -1,11 +1,19 @@
 import statistics
 from data_pre_processing import UserItem
 from data_pre_processing import ProductName
+from data_pre_processing import ComparingData
 from recommend_system import Recommend_system
 
 
 class ExecuteSystem:
-    def __init__(self, behavior_data, salepage_data, number_of_product, total_product):
+    def __init__(
+        self,
+        behavior_data,
+        salepage_data,
+        number_of_product,
+        total_product,
+        comparing_data,
+    ):
         self.user_matrix = UserItem(behavior_data)
         self.user_matrix.user_item_dict()
         self.user_matrix.martix()
@@ -16,6 +24,11 @@ class ExecuteSystem:
         self.RawuserId = self.user_matrix.RawuserID
         self.buy_yes_matrix = self.user_matrix.buynummatrix
         self.total_product = total_product
+        self.compar_martix = ComparingData(comparing_data)
+        self.compar_martix.user_item_dict()
+        self.compar_martix.martix()
+        self.com_buy_yes_matrix = self.compar_martix.buynummatrix
+        self.ComRawuserId = self.compar_martix.RawuserID
 
     def process_recommendation(self, userId):
         self.rs.martix_to_similarity(self.user_matrix.nummatrix)
@@ -61,11 +74,12 @@ class ExecuteSystem:
         return recommendations_comparing
 
     def check_bought(self, userId, recommend_list):
-        target_index = self.RawuserId.index(userId)
-        target = self.buy_yes_matrix.iloc[target_index]
+        # target_index = self.ComRawuserId.index(userId)
+        target = self.com_buy_yes_matrix.loc[userId]
         target = target[target == 1].index.tolist()
         result = [item for item in recommend_list if item in target]
         self.total_product.append(result)
+        print(result)
         if len(result) > 0:
             accuracy = len(result) / len(recommend_list) * 100
             return accuracy
@@ -78,18 +92,18 @@ class ExecuteSystem:
         return targer_index
 
 
-def execute_recommendation_system(execute_system):
-    user_list = []
-    accuracy = []
-    total_product = []
+# def execute_recommendation_system(execute_system):
+#     user_list = []
+#     accuracy = []
+#     total_product = []
 
-    for i in execute_system.RawuserId:
-        user_list.append(i)
-    for j in user_list:
-        userId_index = execute_system.find_user_index(j)
-        salepageid_of_BB = execute_system.process_recommendation(userId_index)
-        check_bought_record = execute_system.check_bought(j, salepageid_of_BB[1])
-        print(f"準確率：{check_bought_record}%")
-        accuracy.append(check_bought_record)
-    print(accuracy)
-    print((f"全用戶平均:{statistics.mean(accuracy):.3f}%"))
+#     for i in execute_system.RawuserId:
+#         user_list.append(i)
+#     for j in user_list:
+#         userId_index = execute_system.find_user_index(j)
+#         salepageid_of_BB = execute_system.process_recommendation(userId_index)
+#         check_bought_record = execute_system.check_bought(j, salepageid_of_BB[1])
+#         print(f"準確率：{check_bought_record}%")
+#         accuracy.append(check_bought_record)
+#     print(accuracy)
+#     print((f"全用戶平均:{statistics.mean(accuracy):.3f}%"))

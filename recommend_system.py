@@ -60,9 +60,3 @@ class ProductName:
 
     def get_salepage_title(self, salepage_id):
         return self.salepage_dict.get(salepage_id, "Title not found")
-
-
-def build_recommendation_system(user_matrix):
-    rs = Recommend_system()
-    rs.martix_to_similarity(user_matrix.nummatrix)
-    return rs

@@ -38,7 +38,8 @@ class EachMemberItem:
 
 class UserItem:
     def __init__(self, data):
-        self.behaviordata = pd.read_excel(data)
+        self.behaviordata = pd.read_csv(data, low_memory=False)
+
         self.RawuserID = [
             x
             for i, x in enumerate(self.behaviordata["ShopMemberId"].to_list())
@@ -94,6 +95,49 @@ class UserItem:
         buy_yes_matrix.to_excel("buy_yes_martix.xlsx")
         self.nummatrix = last_matrix.values
         self.last_matrix = last_matrix
+        self.buynummatrix = buy_yes_matrix
+
+
+class ComparingData:
+    def __init__(self, data):
+        self.behaviordata = pd.read_csv(data, low_memory=False)
+        self.RawuserID = [
+            x
+            for i, x in enumerate(self.behaviordata["ShopMemberId"].to_list())
+            if x not in self.behaviordata["ShopMemberId"].to_list()[:i]
+        ]
+        self.allmember = set(self.behaviordata["ShopMemberId"].to_list())
+        self.memberitem_matrix = {}
+        self.allitem = set(self.behaviordata["SalePageId"].to_list())
+        self.nummatrix = None
+        self.last_matrix = None
+        self.buynummatrix = None
+
+    def user_item_dict(self):
+        allmember = self.allmember
+        behaviordata = self.behaviordata
+        memberitem_matrix = {}
+        memberbuy_matrix = {}
+        for i in allmember:
+            memberdata = behaviordata.loc[behaviordata["ShopMemberId"] == i]
+            memberitem = EachMemberItem(memberdata)
+            memberitem.buy_dict()
+            memberbuy_matrix[i] = memberitem.member_buy_dict
+        self.memberbuy_matrix = memberbuy_matrix
+
+    def martix(self):
+        allitem = list(self.allitem)
+        allmember = list(self.allmember)
+        buy_matrix = self.memberbuy_matrix
+        buy_yes_matrix = pd.DataFrame(columns=allitem, index=allmember)
+        for i in allmember:
+            for j in allitem:
+                if buy_matrix[i].get(j) == None:
+                    buy_yes_matrix.loc[i, j] = 0
+                else:
+                    buy_yes_matrix.loc[i, j] = buy_matrix[i].get(j)
+        buy_yes_matrix.index.name = "userId"
+        buy_yes_matrix.to_excel("com_buy_yes_martix.xlsx")
         self.buynummatrix = buy_yes_matrix
 
 
