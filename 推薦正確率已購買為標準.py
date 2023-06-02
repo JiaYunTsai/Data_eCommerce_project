@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import statistics
 
+
 pd.options.mode.chained_assignment = None
 
 
@@ -13,7 +14,7 @@ class EachMemberItem:
             "viewproduct": 1,
             "add": 3,
             "checkout": 4,
-            "purchase": 5,
+            "purchase": 0,
         }
         self.member.loc[:, "score"] = self.member["Behavior"].map(self.score).copy()
         self.member_item_dict = {}
@@ -97,7 +98,7 @@ class UserItem:
         buy_yes_matrix.to_excel("buy_yes_martix.xlsx")
         self.nummatrix = last_matrix.values
         self.last_matrix = last_matrix
-        self.buynummatrix = buy_yes_matrix.values
+        self.buynummatrix = buy_yes_matrix
 
 
 class Recommend_system:
@@ -112,7 +113,7 @@ class Recommend_system:
     ):  # 找k個最相似的
         # unrated_products = user_item_matrix.loc[user_id, :].isna()  # 未瀏覽過
         unrated_products = user_item_matrix.loc[user_id, :].isna() | (
-            user_item_matrix.loc[user_id, :] < 10
+            user_item_matrix.loc[user_id, :] < 5
         )
         unrated_products = unrated_products.index.values  # 商品ID
         similar_users = user_similarity[user_id].argsort()[-k:][::-1]
@@ -129,7 +130,7 @@ class Recommend_system:
     ):
         # unrated_products = user_item_matrix.loc[user_id, :].isna()  # 未瀏覽過
         unrated_products = user_item_matrix.loc[user_id, :].isna() | (
-            user_item_matrix.loc[user_id, :] < 10
+            user_item_matrix.loc[user_id, :] < 5
         )
         unrated_products = unrated_products.index.values  # 商品ID
         similar_user_ratings = user_item_matrix.loc[
@@ -178,7 +179,7 @@ class ExecuteSystem:
             self.user_matrix.last_matrix,
             self.k,
         )
-        # print("推薦結果A")
+        print("推薦結果")
         for salepage_id, i in zip(
             recommendations[1], range(1, len(recommendations[1]) + 1)
         ):
@@ -197,8 +198,8 @@ class ExecuteSystem:
             for index, value in enumerate(self.user_matrix.RawuserID)
             if value in first_of_user
         ]
-
-        # print("Group AA in the Second Time")
+        # print(self.find_index)
+        print("Group AA in the Second Time")
         recommendations_comparing = self.rs.recommend_compareing(
             userId,
             self.find_index,
@@ -210,8 +211,21 @@ class ExecuteSystem:
             recommendations_comparing, range(1, len(recommendations_comparing) + 1)
         ):
             salepage_title = self.product_name.get_salepage_title(salepage_id)
-            # print(f"推薦第{i}名為：{salepage_title} ")
+            print(f"推薦第{i}名為：{salepage_title} ")
         return recommendations_comparing
+
+    def check_bought(self, userId, recommend_list):
+        target_index = self.RawuserId.index(userId)
+        target = self.buy_yes_matrix.iloc[target_index]
+        target = target[target == 1].index.tolist()
+        result = [item for item in recommend_list if item in target]
+        total_product.append(result)
+        if len(result) > 0:
+            accuracy = len(result) / len(recommend_list) * 100
+            return accuracy
+        else:
+            print("沒有猜中")
+            return 0
 
     def find_user_index(self, userId):
         targer_index = self.RawuserId.index(userId)
@@ -221,42 +235,26 @@ class ExecuteSystem:
 if __name__ == "__main__":
     """
     k為決定推薦幾名
-    userID 更改為目標用戶
-    data1.xlsx 改為 train
-    data2.xlsx 改為 test
+    userId應該沒問題，有問題就抓資料集內隨便一人
+    data1 放誰都可以，這個是以購買有無當答案的
     """
+
     k = 12
     userId = ""
-    # 第一次
-    # print("Group AA")
 
-    execute_system = ExecuteSystem("data1.xlsx", "SalePageData.csv", k)
-    user_list1 = []
-    user_list2 = []
-    group_list = []
-    accuracy_list = []
+    execute_system = ExecuteSystem("data.xlsx", "SalePageData.csv", k)
+
+    user_list = []
+    accuracy = []
+    total_product = []
+
     for i in execute_system.RawuserId:
-        user_list1.append(i)
-    for j in user_list1:
+        user_list.append(i)
+    for j in user_list:
         userId_index = execute_system.find_user_index(j)
-        first_of_user = execute_system.process_recommendation(userId_index)
-        group_list.append(first_of_user[0])
-
-    execute_system = ExecuteSystem("data2.xlsx", "SalePageData.csv", k)
-    for k in execute_system.RawuserId:
-        user_list2.append(k)
-    print(user_list2)
-    print(group_list)
-    for l, m in zip(user_list2, range(0, len(user_list2))):
-        userId_index = execute_system.find_user_index(l)
         salepageid_of_BB = execute_system.process_recommendation(userId_index)
-        salepageid_of_AA = execute_system.process_recomm_comparing(
-            userId_index, group_list[m]
-        )
-        correct_predictions = sum(
-            1 for x, y in zip(salepageid_of_AA, salepageid_of_BB[1]) if x == y
-        )
-        accuracy = correct_predictions / len(salepageid_of_BB[1]) * 100
-        print(f"準確率：{accuracy:.2f}%")
-        accuracy_list.append(accuracy)
-    print((f"全用戶平均:{statistics.mean(accuracy_list):.3f}%"))
+        check_bought_record = execute_system.check_bought(j, salepageid_of_BB[1])
+        print(f"準確率：{check_bought_record}%")
+        accuracy.append(check_bought_record)
+    print(accuracy)
+    print((f"全用戶平均:{statistics.mean(accuracy):.3f}%"))
