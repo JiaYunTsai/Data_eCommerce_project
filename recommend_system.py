@@ -16,7 +16,7 @@ class Recommend_system:
     ):  # 找k個最相似的
         # unrated_products = user_item_matrix.loc[user_id, :].isna()  # 未瀏覽過
         unrated_products = user_item_matrix.loc[user_id, :].isna() | (
-            user_item_matrix.loc[user_id, :] < 5
+            user_item_matrix.loc[user_id, :] > 3
         )
         unrated_products = unrated_products.index.values  # 商品ID
         similar_users = user_similarity[user_id].argsort()[-k:][::-1]
@@ -27,21 +27,6 @@ class Recommend_system:
             similar_users.tolist(),
             unrated_products[recommended_ratings[:k]].tolist(),
         )
-
-    def recommend_compareing(
-        self, user_id, firstuser_of_recommendation, user_item_matrix, k
-    ):
-        # unrated_products = user_item_matrix.loc[user_id, :].isna()  # 未瀏覽過
-        unrated_products = user_item_matrix.loc[user_id, :].isna() | (
-            user_item_matrix.loc[user_id, :] < 5
-        )
-        unrated_products = unrated_products.index.values  # 商品ID
-        similar_user_ratings = user_item_matrix.loc[
-            firstuser_of_recommendation, unrated_products
-        ]
-        recommended_ratings = similar_user_ratings.mean(axis=0)
-        recommended_ratings = np.array(recommended_ratings).argsort()[::-1]
-        return (unrated_products[recommended_ratings[:k]].tolist(),)
 
 
 class ProductName:

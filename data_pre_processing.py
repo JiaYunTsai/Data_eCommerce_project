@@ -36,10 +36,22 @@ class EachMemberItem:
         self.member_buy_dict = member_buy_dict
 
 
-class UserItem:
-    def __init__(self, data):
-        self.behaviordata = pd.read_csv(data, low_memory=False)
+class AnswerMemberItem:
+    def __init__(self, answer_member):
+        self.member = answer_member
+        self.member_buy_dict = {}
 
+    def buy_dict(self):
+        purchase = self.member.loc[
+            self.member["SalePageId"].notnull(), "SalePageId"
+        ].to_list()
+        self.member_buy_dict = {i: 1 for i in purchase}
+
+
+class UserItem:
+    def __init__(self, data, answer):
+        self.behaviordata = pd.read_csv(data, low_memory=False)
+        self.answer = pd.read_csv(answer, low_memory=False)
         self.RawuserID = [
             x
             for i, x in enumerate(self.behaviordata["ShopMemberId"].to_list())
@@ -56,6 +68,13 @@ class UserItem:
         self.last_matrix = None
         self.buynummatrix = None
 
+        self.answermember = set(self.answer["ShopMemberId"].to_list())
+        self.answeritem_martix = {}
+        self.answeritem = set(self.answer["SalePageId"].to_list())
+        self.ans_nummatrix = None
+        self.ans_last_matrix = None
+        self.ans_buynummatrix = None
+
     def user_item_dict(self):
         allmember = self.allmember
         behaviordata = self.behaviordata
@@ -70,6 +89,13 @@ class UserItem:
             memberbuy_matrix[i] = memberitem.member_buy_dict
         self.memberitem_matrix = memberitem_matrix
         self.memberbuy_matrix = memberbuy_matrix
+
+        for i in self.answermember:
+            memberdata = self.answer.loc[self.answer["ShopMemberId"] == i]
+            memberitem = AnswerMemberItem(memberdata)
+            memberitem.buy_dict()
+            memberbuy_matrix[i] = memberitem.member_buy_dict
+        self.anser_buy_matrix = memberbuy_matrix
 
     def martix(self):
         allitem = list(self.allitem)
@@ -97,48 +123,23 @@ class UserItem:
         self.last_matrix = last_matrix
         self.buynummatrix = buy_yes_matrix
 
-
-class ComparingData:
-    def __init__(self, data):
-        self.behaviordata = pd.read_csv(data, low_memory=False)
-        self.RawuserID = [
-            x
-            for i, x in enumerate(self.behaviordata["ShopMemberId"].to_list())
-            if x not in self.behaviordata["ShopMemberId"].to_list()[:i]
-        ]
-        self.allmember = set(self.behaviordata["ShopMemberId"].to_list())
-        self.memberitem_matrix = {}
-        self.allitem = set(self.behaviordata["SalePageId"].to_list())
-        self.nummatrix = None
-        self.last_matrix = None
-        self.buynummatrix = None
-
-    def user_item_dict(self):
-        allmember = self.allmember
-        behaviordata = self.behaviordata
-        memberitem_matrix = {}
-        memberbuy_matrix = {}
-        for i in allmember:
-            memberdata = behaviordata.loc[behaviordata["ShopMemberId"] == i]
-            memberitem = EachMemberItem(memberdata)
-            memberitem.buy_dict()
-            memberbuy_matrix[i] = memberitem.member_buy_dict
-        self.memberbuy_matrix = memberbuy_matrix
-
-    def martix(self):
-        allitem = list(self.allitem)
-        allmember = list(self.allmember)
-        buy_matrix = self.memberbuy_matrix
-        buy_yes_matrix = pd.DataFrame(columns=allitem, index=allmember)
-        for i in allmember:
-            for j in allitem:
+    def anser_martix(self):
+        answeritem = list(self.answeritem)
+        answermember = list(self.answermember)
+        # memberitem_matrix = self.memberitem_matrix
+        buy_matrix = self.anser_buy_matrix
+        last_matrix = pd.DataFrame(columns=answeritem, index=answermember)
+        buy_yes_matrix = pd.DataFrame(columns=answeritem, index=answermember)
+        for i in answermember:
+            for j in answeritem:
                 if buy_matrix[i].get(j) == None:
                     buy_yes_matrix.loc[i, j] = 0
                 else:
                     buy_yes_matrix.loc[i, j] = buy_matrix[i].get(j)
+
         buy_yes_matrix.index.name = "userId"
-        buy_yes_matrix.to_excel("com_buy_yes_martix.xlsx")
-        self.buynummatrix = buy_yes_matrix
+        buy_yes_matrix.to_excel("ans_buy_yes_martix.xlsx")
+        self.ans_buynummatrix = buy_yes_matrix
 
 
 class ProductName:

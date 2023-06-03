@@ -1,7 +1,6 @@
 import statistics
 from data_pre_processing import UserItem
 from data_pre_processing import ProductName
-from data_pre_processing import ComparingData
 from recommend_system import Recommend_system
 
 
@@ -14,9 +13,10 @@ class ExecuteSystem:
         total_product,
         comparing_data,
     ):
-        self.user_matrix = UserItem(behavior_data)
+        self.user_matrix = UserItem(behavior_data, comparing_data)
         self.user_matrix.user_item_dict()
         self.user_matrix.martix()
+        self.user_matrix.anser_martix()
         self.product_name = ProductName(salepage_data)
         self.rs = Recommend_system()
         self.k = number_of_product
@@ -24,11 +24,7 @@ class ExecuteSystem:
         self.RawuserId = self.user_matrix.RawuserID
         self.buy_yes_matrix = self.user_matrix.buynummatrix
         self.total_product = total_product
-        self.compar_martix = ComparingData(comparing_data)
-        self.compar_martix.user_item_dict()
-        self.compar_martix.martix()
-        self.com_buy_yes_matrix = self.compar_martix.buynummatrix
-        self.ComRawuserId = self.compar_martix.RawuserID
+        self.com_buy_yes_matrix = self.user_matrix.ans_buynummatrix
 
     def process_recommendation(self, userId):
         self.rs.martix_to_similarity(self.user_matrix.nummatrix)
@@ -51,28 +47,6 @@ class ExecuteSystem:
 
         return user_of_recommendation, recommendations[1]
 
-    def process_recomm_comparing(self, userId, first_of_user):
-        self.find_index = [
-            index
-            for index, value in enumerate(self.user_matrix.RawuserID)
-            if value in first_of_user
-        ]
-        # print(self.find_index)
-        print("Group AA in the Second Time")
-        recommendations_comparing = self.rs.recommend_compareing(
-            userId,
-            self.find_index,
-            self.user_matrix.last_matrix,
-            self.k,
-        )
-        recommendations_comparing = recommendations_comparing[0]
-        for salepage_id, i in zip(
-            recommendations_comparing, range(1, len(recommendations_comparing) + 1)
-        ):
-            salepage_title = self.product_name.get_salepage_title(salepage_id)
-            print(f"推薦第{i}名為：{salepage_title} ")
-        return recommendations_comparing
-
     def check_bought(self, userId, recommend_list):
         # target_index = self.ComRawuserId.index(userId)
         target = self.com_buy_yes_matrix.loc[userId]
@@ -88,8 +62,12 @@ class ExecuteSystem:
             return 0
 
     def find_user_index(self, userId):
-        targer_index = self.RawuserId.index(userId)
-        return targer_index
+        try:
+            target_index = self.RawuserId.index(userId)
+            return target_index
+        except ValueError:
+            print(f"User {userId} not found. Skipping...")
+            return None
 
 
 # def execute_recommendation_system(execute_system):

@@ -1,13 +1,18 @@
 
 
-
+*.txt
+*.json
 test.py
 test2.py
 test3.py
 itemcollect.py
 "推薦正確率已購買為標準".py
+BigQuery2.py
+df_toBigQuery_Behaviordata.py
+data_target.py
 *.csv
 *.xlsx
+data_target.ipynb
 /.vscode
 # Byte-compiled / optimized / DLL files
 __pycache__/
