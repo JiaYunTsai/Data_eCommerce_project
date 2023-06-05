@@ -29,6 +29,7 @@ class ExecuteSystem:
         self.compar_martix.martix()
         self.com_buy_yes_matrix = self.compar_martix.buynummatrix
         self.ComRawuserId = self.compar_martix.RawuserID
+        self.allbuynummatrix = self.compar_martix.allbuynummatrix
 
     def process_recommendation(self, userId):
         self.rs.martix_to_similarity(self.user_matrix.nummatrix)
@@ -86,6 +87,24 @@ class ExecuteSystem:
         else:
             print("沒有猜中")
             return 0
+
+    def check_bought_only(self, userId, recommend_list):
+        # target_index = self.ComRawuserId.index(userId)
+
+        if userId in self.allbuynummatrix.index:
+            target = self.allbuynummatrix.loc[userId]
+            target = target[target == 1].index.tolist()
+            result = [item for item in recommend_list if item in target]
+            self.total_product.append(result)
+            print(result)
+            if len(result) > 0:
+                accuracy = len(result) / len(recommend_list) * 100
+                return accuracy
+            else:
+                print("沒有猜中")
+                return 0
+        else:
+            print(f"Skipping recommendations for user {userId}")
 
     def find_user_index(self, userId):
         targer_index = self.RawuserId.index(userId)

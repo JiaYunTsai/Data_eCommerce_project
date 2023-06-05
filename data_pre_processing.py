@@ -112,6 +112,7 @@ class ComparingData:
         self.nummatrix = None
         self.last_matrix = None
         self.buynummatrix = None
+        self.allbuynummatrix = None
 
     def user_item_dict(self):
         allmember = self.allmember
@@ -139,6 +140,9 @@ class ComparingData:
         buy_yes_matrix.index.name = "userId"
         buy_yes_matrix.to_excel("com_buy_yes_martix.xlsx")
         self.buynummatrix = buy_yes_matrix
+        no_purchase_users = self.buynummatrix.index[self.buynummatrix.sum(axis=1) == 0]
+        self.allbuynummatrix = self.buynummatrix.drop(index=no_purchase_users)
+        self.allbuynummatrix.index.name = "userId"
 
 
 class ProductName:
