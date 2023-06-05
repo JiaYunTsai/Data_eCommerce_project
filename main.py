@@ -11,16 +11,15 @@ if __name__ == "__main__":
     data2 放驗證的資料集
     """
 
-    k = [8, 9, 12]
+    k = []
     for j in k:
         total_product = []
 
         execute_system = ExecuteSystem(
-            "/Users/aston/Downloads/91APP_DataSet_2023/BehaviorData/Data_eCommerce_project/data_march.csv",
-            "SalePageData.csv",
+            "data1.csv",
             j,
             total_product,
-            "/Users/aston/Downloads/91APP_DataSet_2023/BehaviorData/Data_eCommerce_project/data_march.csv",
+            "data2.csv",
         )
 
         accuracy = []
