@@ -1,12 +1,14 @@
 
 
-
-test.py
+result_record.py
+test01.py
 test2.py
 test3.py
+itemcollect.py
+"推薦正確率已購買為標準".py
 *.csv
 *.xlsx
-
+/.vscode
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
